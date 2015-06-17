@@ -4,15 +4,15 @@
 #include <stdint.h>
 #include "dfa.h"
 
+int* const SPLIT_EPSILON;
+int* const SINGLE_EPSILON;
+
 #define push(s) *sptr++ = s
 #define pop() *(--sptr)
-#define MALLOC(a) *++(*listptr) = malloc(a)
+#define sequence() (Sequence){calloc(1,sizeof(State*)),calloc(1,sizeof(State*))}
 #define CONNECT_SPLIT(a,b,c) (*a)=(State){SPLIT_EPSILON,b,c}
 #define CONNECT_WITH(a,b,c) (*a)=(State){c,b,0}
 #define CONNECT(a,b) (*a)=(State){SINGLE_EPSILON,b,0}
-#define SEQ_ALLOC() s.start=(*++(*listptr)=calloc(1,sizeof(State*))),s.end=(*++(*listptr)=calloc(1,sizeof(State*)));
-
-int *SPLIT_EPSILON, *SINGLE_EPSILON;
 
 void concat_all(Sequence* stack, Sequence** sptr){
 	Sequence ts = {stack->start, ((*sptr)-1)->end};
@@ -21,27 +21,27 @@ void concat_all(Sequence* stack, Sequence** sptr){
 	*(*sptr)++ = ts;
 }
 
-Sequence create_nfa(char* regex, void*** listptr){
+Sequence create_nfa(const char* regex){
 	Sequence stack[128] = {0}, *sptr = stack;
 	Sequence s, one, two;
 	char tstr[256];
-	int i, ni, invert, *charlist, *tcharlist;
+	int i, ti, *charlist, *tcharlist, invert;
 
-	for(char* c = regex; *c; c++){
+	for(const char* c = regex; *c; c++){
 		if(*c == '\\' && *c++){
 			switch(*c){
 				case 'd':
-					s = create_nfa("[0-9]", listptr);
+					s = create_nfa("[0-9]");
 					break;
 				case 'w':
-					s = create_nfa("[A-Za-z]", listptr);
+					s = create_nfa("[A-Za-z]");
 					break;
 				case 's':
-					s = create_nfa("[\t\n ]", listptr);
+					s = create_nfa("[\t\n ]");
 					break;
 				default:
-					SEQ_ALLOC();
-					charlist = MALLOC(2 * sizeof(int));
+					s = sequence();
+					charlist = malloc(2 * sizeof(int));
 					charlist[0] = *c;
 					charlist[1] = 0;
 					CONNECT_WITH(s.start, s.end, charlist);
@@ -50,33 +50,33 @@ Sequence create_nfa(char* regex, void*** listptr){
 			switch(*c){
 				case '|':
 					concat_all(stack, &sptr);
-					one = pop(), SEQ_ALLOC();
+					one = pop(), s = sequence();
 					for(i = 0; *(c+i); i++)
 						tstr[i] = *(c+i+1);
-					two = create_nfa(tstr, listptr);
+					two = create_nfa(tstr);
 					CONNECT(one.end, s.end);
 					CONNECT(two.end, s.end);
 					CONNECT_SPLIT(s.start, one.start, two.start);
 					c += i - 1;
 					break;
 				case '?':
-					one = pop(), SEQ_ALLOC();
+					one = pop(), s = sequence();
 					CONNECT(one.end, s.end);
 					CONNECT_SPLIT(s.start, s.end, one.start);
 					break;
 				case '+':
-					one = pop(), SEQ_ALLOC();
+					one = pop(), s = sequence();
 					CONNECT(s.start, one.start);
 					CONNECT_SPLIT(one.end, one.start, s.end);
 					break;
 				case '*':
-					one = pop(), SEQ_ALLOC();
+					one = pop(), s = sequence();
 					CONNECT_SPLIT(s.start, s.end, one.start);
 					CONNECT_SPLIT(one.end, one.start, s.end);
 					break;
 				case '[':
-					SEQ_ALLOC();
-					invert = 0, i = 0, charlist = MALLOC(128 * sizeof(int));
+					s = sequence();
+					invert = 0, i = 0, charlist = malloc(128 * sizeof(int));
 					if(*(c+1) == '^')
 						c++, invert = 1;
 					while(*(++c) != ']'){
@@ -91,18 +91,18 @@ Sequence create_nfa(char* regex, void*** listptr){
 						}
 					}
 					if(invert){
-						ni = 0, tcharlist = MALLOC(128 * sizeof(int));
+						ti = 0, tcharlist = malloc(128 * sizeof(int));
 						for(char tc = 1; tc != 127; tc++){
 							for(int k = 0; k < i; k++)
 								if(charlist[k] == tc)
 									goto skip;
-							tcharlist[ni++] = tc;
+							tcharlist[ti++] = tc;
 							skip: continue;
 						}
-						charlist = tcharlist, i = ni;
+						charlist = tcharlist, i = ti;
 					}
 					charlist[i++] = 0;
-					tcharlist = MALLOC(i * sizeof(int));
+					tcharlist = malloc(i * sizeof(int));
 					memcpy(tcharlist, charlist, i * sizeof(int));
 					CONNECT_WITH(s.start, s.end, tcharlist);
 					break;
@@ -117,11 +117,11 @@ Sequence create_nfa(char* regex, void*** listptr){
 					}
 					memcpy(tstr, c-i+1, i-1);
 					tstr[i-1] = 0;
-					s = create_nfa(tstr, listptr);
+					s = create_nfa(tstr);
 					break;
 				default:
-					SEQ_ALLOC();
-					charlist = MALLOC(2 * sizeof(int));
+					s = sequence();
+					charlist = malloc(2 * sizeof(int));
 					charlist[0] = *c;
 					charlist[1] = 0;
 					CONNECT_WITH(s.start, s.end, charlist);
@@ -134,17 +134,16 @@ Sequence create_nfa(char* regex, void*** listptr){
 }
 #undef push
 #undef pop
-#undef MALLOC
+#undef sequence
 #undef CONNECT_SPLIT
 #undef CONNECT_WITH
 #undef CONNECT
-#undef SEQ_ALLOC
 
-int get_eclosure_sub(State* s, State*** listptr){
+size_t get_eclosure_sub(State* s, State*** listptr){
 	if(!s)
 		return 0;
 	*(*listptr)++ = s;
-	int count = 1;
+	size_t count = 1;
 	if(s->charlist == SPLIT_EPSILON){
 		count += get_eclosure_sub(s->out1, listptr);
 		count += get_eclosure_sub(s->out0, listptr);
@@ -154,13 +153,13 @@ int get_eclosure_sub(State* s, State*** listptr){
 	return count;
 }
 
-int get_eclosure(State* s, State** cache, State*** cacheptrs){
-	int i;
+size_t get_eclosure(State* s, State** cache, State*** cacheptrs){
+	size_t i;
 	for(i = 0; cache[i]; i++)
 		if(cache[i] == s)
 			return i;
 	State** list = malloc(512 * sizeof(State*));
-	int count = get_eclosure_sub(s, &list);
+	size_t count = get_eclosure_sub(s, &list);
 	*list = NULL;
 
 	State** listn = malloc((count+1) * sizeof(State*));
@@ -207,15 +206,8 @@ int** create_dfa(Sequence nfa){
 }
 
 int** dfa(char* regex){
-	void** listptr = malloc(sizeof(void*) * 1024);
-	listptr[0] = 0;
-
-	Sequence nfa = create_nfa(regex, &listptr);
+	Sequence nfa = create_nfa(regex);
 	int** machine = create_dfa(nfa);
 
-	while(*listptr)
-		free(*listptr--);
-
-	free(listptr);
 	return machine;
 }
