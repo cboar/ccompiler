@@ -9,17 +9,17 @@
 int** machines[AMT], initialized = 0;
 
 void init_tokenizer(){
-	machines[0] = dfa("\"[^\"]*\"");
-	machines[1] = dfa("'[^']'");
-	machines[2] = dfa("auto|break|case|char|const|continue|default|do|double|else|enum|extern|float|for|goto|if|int|long|register|return|short|signed|sizeof|static|struct|switch|typedef|union|unsigned|void|volatile|while");
-	machines[3] = dfa("#\\w+");
-	machines[4] = dfa("\\w(\\w|\\d)*");
-	machines[5] = dfa("\\d+");
-	machines[6] = dfa("->|<<=?|>>=?|&&|\\+\\+|--|\\|\\||[\\-+*/!=><%&|^]=?|[~.,?:]");
-	machines[7] = dfa(";");
-	machines[8] = dfa("[(){}[\\]]");
-	machines[9] = dfa("\\s");
-	machines[10] = dfa("[^]");
+	machines[STRING] = dfa("\"[^\"]*\"");
+	machines[CHARACTER] = dfa("'[^']'");
+	machines[KEYWORD] = dfa("auto|break|case|char|const|continue|default|do|double|else|enum|extern|float|for|goto|if|int|long|register|return|short|signed|sizeof|static|struct|switch|typedef|union|unsigned|void|volatile|while");
+	machines[PREPROCESSOR] = dfa("#\\w+");
+	machines[IDENTIFIER] = dfa("\\w(\\w|\\d)*");
+	machines[INTEGER] = dfa("\\d+");
+	machines[OPERATOR] = dfa("->|<<=?|>>=?|&&|\\+\\+|--|\\|\\||[\\-+*/!=><%&|^]=?|[~.,?:]");
+	machines[SEMICOLON] = dfa(";");
+	machines[CONTAINER] = dfa("[(){}[\\]]");
+	machines[WHITESPACE] = dfa("\\s");
+	machines[ERROR] = dfa("[^]");
 	initialized = 1;
 }
 
