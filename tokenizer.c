@@ -2,27 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include "dfa.h"
+#include "tokenizer.h"
 
 #define AMT 11
-
-typedef struct Token {
-	char* lexeme;
-	int type;
-} Token;
-
-typedef enum TokenType {
-	STRING,
-	CHARACTER,
-	KEYWORD,
-	PREPROCESSOR,
-	IDENTIFIER,
-	INTEGER,
-	OPERATOR,
-	SEMICOLON,
-	CONTAINER,
-	WHITESPACE,
-	ERROR
-} TokenType;
 
 int** machines[AMT], initialized = 0;
 
@@ -41,6 +23,10 @@ void init_tokenizer(){
 	initialized = 1;
 }
 
+void free_machines(){
+	for(int i = 0; i < AMT; i++)
+		free(machines[i]);
+}
 
 int tokenize(char* input, Token** tokenlist){
 	if(!initialized)
@@ -82,10 +68,6 @@ int tokenize(char* input, Token** tokenlist){
 	return count;
 }
 
-void free_machines(){
-	for(int i = 0; i < AMT; i++)
-		free(machines[i]);
-}
 
 #undef AMT
 

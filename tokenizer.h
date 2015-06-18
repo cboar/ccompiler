@@ -8,7 +8,9 @@ typedef struct Token {
 
 typedef enum TokenType {
 	STRING,
+	CHARACTER,
 	KEYWORD,
+	PREPROCESSOR,
 	IDENTIFIER,
 	INTEGER,
 	OPERATOR,
