@@ -20,7 +20,7 @@ typedef enum TokenType {
 	ERROR
 } TokenType;
 
-int tokenize(char*, Token**);
+size_t tokenize(char*, Token**);
 void free_machines();
 
 #endif
