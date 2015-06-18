@@ -4,8 +4,8 @@
 #include <stdint.h>
 #include "dfa.h"
 
-int* const SPLIT_EPSILON;
-int* const SINGLE_EPSILON;
+char* const SPLIT_EPSILON;
+char* const SINGLE_EPSILON;
 
 #define push(s) *sptr++ = s
 #define pop() *(--sptr)
@@ -24,8 +24,8 @@ void concat_all(Sequence* stack, Sequence** sptr){
 Sequence create_nfa(const char* regex){
 	Sequence stack[128] = {0}, *sptr = stack;
 	Sequence s, one, two;
-	char tstr[256];
-	int i, ti, *charlist, *tcharlist, invert;
+	char *charlist, *tcharlist, tstr[256];
+	int i, ti, invert;
 
 	for(const char* c = regex; *c; c++){
 		if(*c == '\\' && *c++){
@@ -41,7 +41,7 @@ Sequence create_nfa(const char* regex){
 					break;
 				default:
 					s = sequence();
-					charlist = malloc(2 * sizeof(int));
+					charlist = malloc(2 * sizeof(*charlist));
 					charlist[0] = *c;
 					charlist[1] = 0;
 					CONNECT_WITH(s.start, s.end, charlist);
@@ -76,13 +76,13 @@ Sequence create_nfa(const char* regex){
 					break;
 				case '[':
 					s = sequence();
-					invert = 0, i = 0, charlist = malloc(128 * sizeof(int));
+					invert = 0, i = 0, charlist = malloc(128 * sizeof(*charlist));
 					if(*(c+1) == '^')
 						c++, invert = 1;
 					while(*(++c) != ']'){
 						switch(*c){
 							case '-':
-								for(int k = *(c-1)+1; k < *(c+1); k++)
+								for(char k = *(c-1)+1; k < *(c+1); k++)
 									charlist[i++] = k;
 							case '\\':
 								c++;
@@ -91,7 +91,7 @@ Sequence create_nfa(const char* regex){
 						}
 					}
 					if(invert){
-						ti = 0, tcharlist = malloc(128 * sizeof(int));
+						ti = 0, tcharlist = malloc(128 * sizeof(*tcharlist));
 						for(char tc = 1; tc != 127; tc++){
 							for(int k = 0; k < i; k++)
 								if(charlist[k] == tc)
@@ -102,9 +102,8 @@ Sequence create_nfa(const char* regex){
 						charlist = tcharlist, i = ti;
 					}
 					charlist[i++] = 0;
-					tcharlist = malloc(i * sizeof(int));
-					memcpy(tcharlist, charlist, i * sizeof(int));
-					CONNECT_WITH(s.start, s.end, tcharlist);
+					tcharlist = realloc(charlist, i * sizeof(*tcharlist));
+					CONNECT_WITH(s.start, s.end, tcharlist ? tcharlist : charlist);
 					break;
 				case '(':
 					i = 0;
@@ -121,7 +120,7 @@ Sequence create_nfa(const char* regex){
 					break;
 				default:
 					s = sequence();
-					charlist = malloc(2 * sizeof(int));
+					charlist = malloc(2 * sizeof(*charlist));
 					charlist[0] = *c;
 					charlist[1] = 0;
 					CONNECT_WITH(s.start, s.end, charlist);
@@ -181,28 +180,22 @@ int** create_dfa(Sequence nfa){
 	for(i = 0; cache[i]; i++){
 		machine[i] = calloc(128, sizeof(int));
 		for(State** sl = cacheptrs[i], *s = *sl; (s = *sl); sl++){
-			int ri = relinks[i] ?: i;
+			int ri = relinks[i] ? relinks[i] : i;
 			if(s == nfa.end)
 				machine[ri][0] = 1;
 			if(s->charlist != SINGLE_EPSILON && s->charlist != SPLIT_EPSILON){
-				int eclosi = get_eclosure(s->out0, cache, cacheptrs);
-				printf("%d %d\t(", ri, eclosi);
-				for(int* c = s->charlist; *c; c++){
+				size_t eclosi = get_eclosure(s->out0, cache, cacheptrs);
+				for(char* c = s->charlist; *c; c++){
 					if(machine[ri][*c] != 0)
 						relinks[eclosi] = machine[ri][*c];
-					else {
-						printf(*c < 32 ? "%d," : "%c", *c);
+					else
 						machine[ri][*c] = eclosi;
-					}
 				}
-				printf(")\n");
 			}
 		}
 	}
-	int** nmachine = malloc(i * sizeof(int*));
-	memcpy(nmachine, machine, i * sizeof(int*));
-	free(machine);
-	return nmachine;
+	int** nmachine = realloc(machine, i * sizeof(int*));
+	return nmachine ? nmachine : machine;
 }
 
 int** dfa(char* regex){

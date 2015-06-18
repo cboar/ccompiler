@@ -5,7 +5,7 @@ typedef struct State State;
 typedef struct Sequence Sequence;
 
 struct State {
-	int* charlist;
+	char* charlist;
 	State* out0;
 	State* out1;
 };
