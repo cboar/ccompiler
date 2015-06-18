@@ -6,12 +6,6 @@
 
 #define AMT 11
 
-char* debug_names[] = {
-	"String", "Character", "Keyword",
-	"Preproc", "Id", "Int", "Operator",
-	"Semicolon", "Container", "Whitespace",
-	"Error"
-};
 int** machines[AMT], initialized = 0;
 
 void init_tokenizer(){
@@ -34,7 +28,7 @@ void free_machines(){
 		free(machines[i]);
 }
 
-size_t tokenize(char* input, Token** tokenlist){
+size_t tokenize(char* input, Token* listptr){
 	if(!initialized)
 		init_tokenizer();
 
@@ -57,11 +51,10 @@ size_t tokenize(char* input, Token** tokenlist){
 		if(oldhighest >= highest){ //previous highest no longer matches, add it
 			for(size_t m = 0; m < AMT; m++){
 				if(length[m] == oldhighest && machines[m][state[m]][0] == 1){ //if is accepting
-					if(m != WHITESPACE){
-						for(int i = oldhighest; i; i--)
-							printf("%c", *(c-i));
-						printf("\t\t%s\n", debug_names[m]);
-					}
+					char* str = malloc((oldhighest + 1) * sizeof(char));
+					memcpy(str, c - oldhighest, oldhighest * sizeof(char));
+					str[oldhighest] = 0;
+					*listptr++ = (Token){str, m}; //add token to list
 					count++;
 					break;
 				}
