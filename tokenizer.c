@@ -12,7 +12,7 @@ void init_tokenizer(){
 	machines[STRING] = dfa("\"[^\"]*\"");
 	machines[CHARACTER] = dfa("'[^']'");
 	machines[KEYWORD] = dfa("auto|break|case|char|const|continue|default|do|double|else|enum|extern|float|for|goto|if|int|long|register|return|short|signed|sizeof|static|struct|switch|typedef|union|unsigned|void|volatile|while");
-	machines[PREPROCESSOR] = dfa("#\\w+");
+	machines[PREPROCESSOR] = dfa("#\\w+[^\n]*");
 	machines[IDENTIFIER] = dfa("\\w(\\w|\\d)*");
 	machines[INTEGER] = dfa("\\d+");
 	machines[OPERATOR] = dfa("->|<<=?|>>=?|&&|\\+\\+|--|\\|\\||[\\-+*/!=><%&|^]=?|[~.,?:]");
