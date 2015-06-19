@@ -12,9 +12,16 @@ char* debug_names[] = {
 };
 
 int main(void){
+	char src[2048];
+	FILE* file;
+	file = fopen("testcode.c", "r");
+	int res = fscanf(file, "%[\x1-\x7F]", src);
+
 	Token* list = malloc(256 * sizeof(Token));
-	int count = tokenize("#include \"stdio.h\"\n\nint main(void){\n\tfor(int i = 0; i < 500; i++){\n\t\tprintf(\"hi\");\n\t}\n}\n\n", list);
+	int count = tokenize(src, list);
 
 	for(int i = 0; i < count; i++)
-		printf("%s:       %s\n", debug_names[list[i].type], list[i].lexeme);
+		printf("%s:   %s\n", debug_names[list[i].type], list[i].lexeme);
+
+	fclose(file);
 }
