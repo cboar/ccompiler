@@ -51,11 +51,13 @@ size_t tokenize(char* input, Token* listptr){
 		if(oldhighest >= highest){ //previous highest no longer matches, add it
 			for(size_t m = 0; m < AMT; m++){
 				if(length[m] == oldhighest && machines[m][state[m]][0] == 1){ //if is accepting
-					char* str = malloc((oldhighest + 1) * sizeof(char));
-					memcpy(str, c - oldhighest, oldhighest * sizeof(char));
-					str[oldhighest] = 0;
-					*listptr++ = (Token){str, m}; //add token to list
-					count++;
+					if(m != WHITESPACE){
+						char* str = malloc((oldhighest + 1) * sizeof(char));
+						memcpy(str, c - oldhighest, oldhighest * sizeof(char));
+						str[oldhighest] = 0;
+						*listptr++ = (Token){str, m}; //add token to list
+						count++;
+					}
 					break;
 				}
 			}
