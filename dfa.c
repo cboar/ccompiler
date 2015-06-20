@@ -4,8 +4,8 @@
 #include <stdint.h>
 #include "dfa.h"
 
-char* const SPLIT_EPSILON;
-char* const SINGLE_EPSILON;
+static char SPLIT_EPSILON[1];
+static char SINGLE_EPSILON[1];
 
 #define push(s) *sptr++ = s
 #define pop() *(--sptr)
@@ -183,14 +183,14 @@ int** create_dfa(Sequence nfa){
 			int ri = relinks[i] ? relinks[i] : i;
 			if(s == nfa.end)
 				machine[ri][0] = 1;
-			if(s->charlist != SINGLE_EPSILON && s->charlist != SPLIT_EPSILON){
-				size_t eclosi = get_eclosure(s->out0, cache, cacheptrs);
-				for(char* c = s->charlist; *c; c++){
-					if(machine[ri][*c] != 0)
-						relinks[eclosi] = machine[ri][*c];
-					else
-						machine[ri][*c] = eclosi;
-				}
+			if(!s->charlist || s->charlist == SINGLE_EPSILON || s->charlist == SPLIT_EPSILON)
+				continue;
+			size_t eclosi = get_eclosure(s->out0, cache, cacheptrs);
+			for(char* c = s->charlist; *c; c++){
+				if(machine[ri][*c] != 0)
+					relinks[eclosi] = machine[ri][*c];
+				else
+					machine[ri][*c] = eclosi;
 			}
 		}
 	}
