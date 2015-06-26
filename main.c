@@ -14,7 +14,7 @@ char* debug_names[] = {
 int main(void){
 	char src[2048];
 	FILE* file;
-	file = fopen("testcode.c", "r");
+	file = fopen("testcode", "r");
 	int res = fscanf(file, "%[\x1-\x7F]", src);
 
 	Token* list = malloc(256 * sizeof(Token));

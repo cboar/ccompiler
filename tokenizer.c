@@ -6,7 +6,7 @@
 
 #define AMT 11
 
-int** machines[AMT], initialized = 0;
+static int** machines[AMT], initialized = 0;
 
 void init_tokenizer(){
 	machines[STRING] = dfa("\"[^\"]*\"");
