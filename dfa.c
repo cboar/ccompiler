@@ -9,7 +9,7 @@ static char SINGLE_EPSILON[1];
 
 #define push(s) *sptr++ = s
 #define pop() *(--sptr)
-#define sequence() (Sequence){calloc(1,sizeof(State*)),calloc(1,sizeof(State*))}
+#define sequence() (Sequence){calloc(1,sizeof(State)),calloc(1,sizeof(State))}
 #define CONNECT_SPLIT(a,b,c) (*a)=(State){SPLIT_EPSILON,b,c}
 #define CONNECT_WITH(a,b,c) (*a)=(State){c,b,0}
 #define CONNECT(a,b) (*a)=(State){SINGLE_EPSILON,b,0}
@@ -22,7 +22,7 @@ void concat_all(Sequence* stack, Sequence** sptr){
 }
 
 Sequence create_nfa(const char* regex){
-	Sequence stack[128] = {0}, *sptr = stack;
+	Sequence stack[32] = {0}, *sptr = stack;
 	Sequence s, one, two;
 	char *charlist, *tcharlist, tstr[256];
 	int i, ti, invert;
