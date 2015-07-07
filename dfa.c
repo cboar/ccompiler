@@ -7,9 +7,9 @@
 static char SPLIT_EPSILON[1];
 static char SINGLE_EPSILON[1];
 
-#define push(s) *sptr++ = s
-#define pop() *(--sptr)
-#define sequence() (Sequence){calloc(1,sizeof(State)),calloc(1,sizeof(State))}
+#define PUSH(s) *sptr++ = s
+#define POP() *(--sptr)
+#define SEQUENCE() (Sequence){calloc(1,sizeof(State)),calloc(1,sizeof(State))}
 #define CONNECT_SPLIT(a,b,c) (*a)=(State){SPLIT_EPSILON,b,c}
 #define CONNECT_WITH(a,b,c) (*a)=(State){c,b,0}
 #define CONNECT(a,b) (*a)=(State){SINGLE_EPSILON,b,0}
@@ -22,118 +22,106 @@ void concat_all(Sequence* stack, Sequence** sptr){
 }
 
 Sequence create_nfa(const char* regex){
-	Sequence stack[32] = {0}, *sptr = stack;
+	Sequence stack[32] = {{0}}, *sptr = stack;
 	Sequence s, one, two;
 	char *charlist, *tcharlist, tstr[256];
 	int i, ti, invert;
 
 	for(const char* c = regex; *c; c++){
-		if(*c == '\\' && *c++){
-			switch(*c){
-				case 'd':
-					s = create_nfa("[0-9]");
-					break;
-				case 'w':
-					s = create_nfa("[A-Za-z]");
-					break;
-				case 's':
-					s = create_nfa("[\t\n ]");
-					break;
+		switch(*c){
+		case '|':
+			concat_all(stack, &sptr);
+			one = POP(), s = SEQUENCE();
+			for(i = 0; *(c+i); i++)
+				tstr[i] = *(c+i+1);
+			two = create_nfa(tstr);
+			CONNECT(one.end, s.end);
+			CONNECT(two.end, s.end);
+			CONNECT_SPLIT(s.start, one.start, two.start);
+			c += i - 1;
+			break;
+		case '?':
+			one = POP(), s = SEQUENCE();
+			CONNECT(one.end, s.end);
+			CONNECT_SPLIT(s.start, s.end, one.start);
+			break;
+		case '+':
+			one = POP(), s = SEQUENCE();
+			CONNECT(s.start, one.start);
+			CONNECT_SPLIT(one.end, one.start, s.end);
+			break;
+		case '*':
+			one = POP(), s = SEQUENCE();
+			CONNECT_SPLIT(s.start, s.end, one.start);
+			CONNECT_SPLIT(one.end, one.start, s.end);
+			break;
+		case '.':
+			s = create_nfa("[^]");
+			break;
+		case '[':
+			s = SEQUENCE();
+			invert = 0, i = 0, charlist = malloc(128 * sizeof(*charlist));
+			if(*(c+1) == '^')
+				c++, invert = 1;
+			while(*(++c) != ']'){
+				switch(*c){
+				case '-':
+					for(char k = *(c-1)+1; k < *(c+1); k++)
+						charlist[i++] = k;
+					/* fall through */
+				case '\\':
+					c++;
+					/* fall through */
 				default:
-					s = sequence();
-					charlist = malloc(2 * sizeof(*charlist));
-					charlist[0] = *c;
-					charlist[1] = 0;
-					CONNECT_WITH(s.start, s.end, charlist);
+					charlist[i++] = *c;
+				}
 			}
-		} else {
-			switch(*c){
-				case '|':
-					concat_all(stack, &sptr);
-					one = pop(), s = sequence();
-					for(i = 0; *(c+i); i++)
-						tstr[i] = *(c+i+1);
-					two = create_nfa(tstr);
-					CONNECT(one.end, s.end);
-					CONNECT(two.end, s.end);
-					CONNECT_SPLIT(s.start, one.start, two.start);
-					c += i - 1;
-					break;
-				case '?':
-					one = pop(), s = sequence();
-					CONNECT(one.end, s.end);
-					CONNECT_SPLIT(s.start, s.end, one.start);
-					break;
-				case '+':
-					one = pop(), s = sequence();
-					CONNECT(s.start, one.start);
-					CONNECT_SPLIT(one.end, one.start, s.end);
-					break;
-				case '*':
-					one = pop(), s = sequence();
-					CONNECT_SPLIT(s.start, s.end, one.start);
-					CONNECT_SPLIT(one.end, one.start, s.end);
-					break;
-				case '[':
-					s = sequence();
-					invert = 0, i = 0, charlist = malloc(128 * sizeof(*charlist));
-					if(*(c+1) == '^')
-						c++, invert = 1;
-					while(*(++c) != ']'){
-						switch(*c){
-							case '-':
-								for(char k = *(c-1)+1; k < *(c+1); k++)
-									charlist[i++] = k;
-							case '\\':
-								c++;
-							default:
-								charlist[i++] = *c;
-						}
-					}
-					if(invert){
-						ti = 0, tcharlist = malloc(128 * sizeof(*tcharlist));
-						for(char tc = 1; tc != 127; tc++){
-							for(int k = 0; k < i; k++)
-								if(charlist[k] == tc)
-									goto skip;
-							tcharlist[ti++] = tc;
-							skip: continue;
-						}
-						charlist = tcharlist, i = ti;
-					}
-					charlist[i++] = 0;
-					tcharlist = realloc(charlist, i * sizeof(*tcharlist));
-					CONNECT_WITH(s.start, s.end, tcharlist ? tcharlist : charlist);
-					break;
-				case '(':
-					i = 0;
-					for(int count = 1; count > 0; i++){
-						c++;
-						if(*c == '(')
-							count++;
-						else if(*c == ')')
-							count--;
-					}
-					memcpy(tstr, c-i+1, i-1);
-					tstr[i-1] = 0;
-					s = create_nfa(tstr);
-					break;
-				default:
-					s = sequence();
-					charlist = malloc(2 * sizeof(*charlist));
-					charlist[0] = *c;
-					charlist[1] = 0;
-					CONNECT_WITH(s.start, s.end, charlist);
+			if(invert){
+				ti = 0, tcharlist = malloc(128 * sizeof(*tcharlist));
+				for(char tc = 1; tc != 127; tc++){
+					for(int k = 0; k < i; k++)
+						if(charlist[k] == tc)
+							goto skip;
+					tcharlist[ti++] = tc;
+					skip: ;
+				}
+				charlist = tcharlist, i = ti;
 			}
+			charlist[i++] = 0;
+			tcharlist = realloc(charlist, i * sizeof(*tcharlist));
+			CONNECT_WITH(s.start, s.end, tcharlist ? tcharlist : charlist);
+			break;
+		case '(':
+			i = 0;
+			for(int count = 1; count > 0; i++){
+				c++;
+				if(*c == '(')
+					count++;
+				else if(*c == ')')
+					count--;
+			}
+			memcpy(tstr, c-i+1, i-1);
+			tstr[i-1] = 0;
+			s = create_nfa(tstr);
+			break;
+		case '\\':
+			c++;
+			/* fall through */
+		default:
+			s = SEQUENCE();
+			charlist = malloc(2 * sizeof(*charlist));
+			charlist[0] = *c;
+			charlist[1] = 0;
+			CONNECT_WITH(s.start, s.end, charlist);
 		}
-		push(s);
+		PUSH(s);
 	}
 	concat_all(stack, &sptr);
 	return stack[0];
 }
-#undef push
-#undef pop
-#undef sequence
+#undef PUSH
+#undef POP
+#undef SEQUENCE
 #undef CONNECT_SPLIT
 #undef CONNECT_WITH
 #undef CONNECT
