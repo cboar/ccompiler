@@ -22,14 +22,15 @@ void concat_all(Sequence* stack, Sequence** sptr){
 	*(*sptr)++ = ts;
 }
 
-Sequence create_nfa(char* regex){
-	char* copy = malloc((strlen(regex) + 1) * sizeof(*copy));
-	strcpy(copy, regex);
+Sequence create_nfa(const char* str, RegexContext* rctx){
+	printf("%s\n", str);
+	char* copy = malloc((strlen(str) + 1) * sizeof(*copy));
+	strcpy(copy, str);
 
 	Sequence stack[32] = {{0}}, *sptr = stack;
 	Sequence s, one, two;
 	char *charlist, *tcharlist, tstr[256];
-	int i, ti, invert;
+	int i, ti;
 
 	for(char* c = copy; *c; c++){
 		switch(*c){
@@ -38,7 +39,7 @@ Sequence create_nfa(char* regex){
 			one = POP(), s = SEQUENCE();
 			for(i = 0; *(c+i); i++)
 				tstr[i] = *(c+i+1);
-			two = create_nfa(tstr);
+			two = create_nfa(tstr, rctx);
 			CONNECT(one.end, s.end);
 			CONNECT(two.end, s.end);
 			CONNECT_SPLIT(s.start, one.start, two.start);
@@ -60,19 +61,24 @@ Sequence create_nfa(char* regex){
 			CONNECT_SPLIT(one.end, one.start, s.end);
 			break;
 		case '.':
-			s = create_nfa("[^]");
+			s = create_nfa("[^]", NULL);
 			break;
 		case '{':
-			while(*(++c) != '}'){
-
-			}
-			c++;
+			ti = (strchr(c, '}') - c);
+			tstr[ti] = '\0';
+			memcpy(tstr, c + 1, ti - 1);
+			for(i = 0; rctx->ids[i]; i++)
+				if(strcmp(tstr, rctx->ids[i]) == 0){
+					s = create_nfa(rctx->patterns[i], rctx);
+					break;
+				}
+			c += (ti + 1);
 			break;
 		case '[':
 			s = SEQUENCE();
-			invert = 0, i = 0, charlist = malloc(128 * sizeof(*charlist));
+			i = 0, ti = 0, charlist = malloc(128 * sizeof(*charlist));
 			if(*(c+1) == '^')
-				c++, invert = 1;
+				c++, ti = 1;
 			while(*(++c) != ']'){
 				switch(*c){
 				case '-':
@@ -87,7 +93,7 @@ Sequence create_nfa(char* regex){
 					charlist[i++] = *c;
 				}
 			}
-			if(invert){
+			if(ti){
 				ti = 0, tcharlist = malloc(128 * sizeof(*tcharlist));
 				for(char tc = 1; tc != 127; tc++){
 					for(int k = 0; k < i; k++)
@@ -113,7 +119,7 @@ Sequence create_nfa(char* regex){
 			}
 			memcpy(tstr, c-i+1, i-1);
 			tstr[i-1] = 0;
-			s = create_nfa(tstr);
+			s = create_nfa(tstr, rctx);
 			break;
 		case '\\':
 			c++;
@@ -199,9 +205,20 @@ int** create_dfa(Sequence nfa){
 	return nmachine ? nmachine : machine;
 }
 
-int** dfa(char* regex){
-	Sequence nfa = create_nfa(regex);
-	int** machine = create_dfa(nfa);
+void regex_define(RegexContext* rctx, const char* id, const char* pattern){
+	size_t i;
+	for(i = 0; rctx->ids[i]; i++);
+	rctx->ids[i] = id;
+	rctx->patterns[i] = pattern;
+}
 
+RegexContext regex_ctx(size_t size){
+	return (RegexContext){ calloc(size, sizeof(char*)),
+							calloc(size, sizeof(char*)) };
+}
+
+int** regex(char* str, RegexContext* rctx){
+	Sequence nfa = create_nfa(str, rctx);
+	int** machine = create_dfa(nfa);
 	return machine;
 }

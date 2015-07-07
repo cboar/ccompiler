@@ -1,9 +1,14 @@
 #ifndef DFA_H
 #define DFA_H
 
+typedef struct RegexContext RegexContext;
 typedef struct State State;
 typedef struct Sequence Sequence;
 
+struct RegexContext {
+	const char** ids;
+	const char** patterns;
+};
 struct State {
 	char* charlist;
 	State* out0;
@@ -14,7 +19,8 @@ struct Sequence {
 	State* end;
 };
 
-int** dfa(char*);
-void test_dfa(char*, int**);
+RegexContext regex_ctx(size_t);
+void regex_define(RegexContext*, const char*, const char*);
+int** regex(char*, RegexContext*);
 
 #endif
