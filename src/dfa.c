@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
+#include "util.h"
 #include "dfa.h"
 
 static char SPLIT_EPSILON[1];
@@ -21,13 +22,16 @@ void concat_all(Sequence* stack, Sequence** sptr){
 	*(*sptr)++ = ts;
 }
 
-Sequence create_nfa(const char* regex){
+Sequence create_nfa(char* regex){
+	char* copy = malloc((strlen(regex) + 1) * sizeof(*copy));
+	strcpy(copy, regex);
+
 	Sequence stack[32] = {{0}}, *sptr = stack;
 	Sequence s, one, two;
 	char *charlist, *tcharlist, tstr[256];
 	int i, ti, invert;
 
-	for(const char* c = regex; *c; c++){
+	for(char* c = copy; *c; c++){
 		switch(*c){
 		case '|':
 			concat_all(stack, &sptr);
@@ -58,6 +62,12 @@ Sequence create_nfa(const char* regex){
 		case '.':
 			s = create_nfa("[^]");
 			break;
+		case '{':
+			while(*(++c) != '}'){
+
+			}
+			c++;
+			break;
 		case '[':
 			s = SEQUENCE();
 			invert = 0, i = 0, charlist = malloc(128 * sizeof(*charlist));
@@ -66,11 +76,12 @@ Sequence create_nfa(const char* regex){
 			while(*(++c) != ']'){
 				switch(*c){
 				case '-':
-					for(char k = *(c-1)+1; k < *(c+1); k++)
+					for(char k = *(c-1)+1; k <= *(c+1); k++)
 						charlist[i++] = k;
-					/* fall through */
+					break;
 				case '\\':
 					c++;
+					*c = get_escaped(*c);
 					/* fall through */
 				default:
 					charlist[i++] = *c;
@@ -106,6 +117,7 @@ Sequence create_nfa(const char* regex){
 			break;
 		case '\\':
 			c++;
+			*c = get_escaped(*c);
 			/* fall through */
 		default:
 			s = SEQUENCE();
@@ -117,6 +129,7 @@ Sequence create_nfa(const char* regex){
 		PUSH(s);
 	}
 	concat_all(stack, &sptr);
+	free(copy);
 	return stack[0];
 }
 #undef PUSH
