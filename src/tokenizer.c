@@ -1,17 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "dfa.h"
+#include "regex.h"
 #include "tokenizer.h"
-#define AMT 1
 
-static int** machines[AMT];
-
-void tokenizer_init(){
-
-}
-
-size_t tokenize(char* input, Token* listptr){
+/*size_t tokenize(char* input, Token* listptr){
 	int state[AMT] = {0}, nstate[AMT] = {0};
 	size_t length[AMT] = {0}, nlength[AMT] = {0};
 	size_t oldhighest = 0, count = 0;
@@ -45,6 +38,4 @@ size_t tokenize(char* input, Token* listptr){
 		memcpy(length, nlength, AMT * sizeof(*length));
 	}
 	return count;
-}
-
-#undef AMT
+}*/

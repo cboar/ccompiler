@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdint.h>
 #include "util.h"
-#include "dfa.h"
+#include "regex.h"
 
 static char SPLIT_EPSILON[1];
 static char SINGLE_EPSILON[1];

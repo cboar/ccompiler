@@ -1,5 +1,5 @@
-#ifndef DFA_H
-#define DFA_H
+#ifndef REGEX_H
+#define REGEX_H
 
 typedef struct RegexContext RegexContext;
 typedef struct State State;
