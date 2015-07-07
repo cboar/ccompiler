@@ -2,6 +2,22 @@
 #include <stdio.h>
 #include "util.h"
 
+char get_escaped(char c)
+{
+	switch(c){
+		case 'a': return '\a';
+		case 'b': return '\b';
+		case 'f': return '\f';
+		case 'n': return '\n';
+		case 'r': return '\r';
+		case 't': return '\t';
+		case 'v': return '\v';
+		case 'x':
+			fprintf(stderr, "Unsupported hex escape!");
+		default: return c;
+	}
+}
+
 char* read_file(char* name)
 {
 	FILE* file = fopen(name, "rb");
