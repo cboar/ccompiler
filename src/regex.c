@@ -8,7 +8,6 @@
 static char SPLIT_EPSILON[1];
 static char SINGLE_EPSILON[1];
 
-#define PUSH(s) *sptr++ = s
 #define POP() *(--sptr)
 #define SEQUENCE() (Sequence){calloc(1,sizeof(State)),calloc(1,sizeof(State))}
 #define CONNECT_SPLIT(a,b,c) (*a)=(State){SPLIT_EPSILON,b,c}
@@ -30,9 +29,12 @@ Sequence create_nfa(const char* str, RegexContext* rctx){
 	Sequence stack[32] = {{0}}, *sptr = stack;
 	Sequence s, one, two;
 	char *charlist, *tcharlist, tstr[256];
-	int i, ti;
+	int i, ti, inquote = 0;
 
 	for(char* c = copy; *c; c++){
+		if(inquote && *c != '\"')
+			goto literal;
+
 		switch(*c){
 		case '|':
 			concat_all(stack, &sptr);
@@ -62,6 +64,11 @@ Sequence create_nfa(const char* str, RegexContext* rctx){
 			break;
 		case '.':
 			s = create_nfa("[^]", NULL);
+			break;
+		case '\"':
+			s = SEQUENCE();
+			CONNECT(s.start, s.end);
+			inquote = !inquote;
 			break;
 		case '{':
 			ti = (strchr(c, '}') - c);
@@ -125,20 +132,19 @@ Sequence create_nfa(const char* str, RegexContext* rctx){
 			c++;
 			*c = get_escaped(*c);
 			/* fall through */
-		default:
+		literal: default:
 			s = SEQUENCE();
 			charlist = malloc(2 * sizeof(*charlist));
 			charlist[0] = *c;
 			charlist[1] = 0;
 			CONNECT_WITH(s.start, s.end, charlist);
 		}
-		PUSH(s);
+		*sptr++ = s;
 	}
 	concat_all(stack, &sptr);
 	free(copy);
 	return stack[0];
 }
-#undef PUSH
 #undef POP
 #undef SEQUENCE
 #undef CONNECT_SPLIT
