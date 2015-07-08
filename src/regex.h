@@ -1,13 +1,12 @@
 #ifndef REGEX_H
 #define REGEX_H
 
-typedef struct RegexContext RegexContext;
+typedef struct RegexVar RegexVar;
 typedef struct State State;
 typedef struct Sequence Sequence;
 
-struct RegexContext {
-	const char** ids;
-	const char** patterns;
+struct RegexVar {
+	char *id, *pattern;
 };
 struct State {
 	char* charlist;
@@ -19,8 +18,6 @@ struct Sequence {
 	State* end;
 };
 
-RegexContext regex_ctx(size_t);
-void regex_define(RegexContext*, const char*, const char*);
-int** regex(char*, RegexContext*);
+int** regex(char*, RegexVar*);
 
 #endif

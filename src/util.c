@@ -13,7 +13,7 @@ char get_escaped(char c)
 		case 't': return '\t';
 		case 'v': return '\v';
 		case 'x':
-			fprintf(stderr, "Unsupported hex escape!");
+			fprintf(stderr, "Unsupported hex escape!\n");
 		default: return c;
 	}
 }

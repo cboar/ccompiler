@@ -21,7 +21,7 @@ void concat_all(Sequence* stack, Sequence** sptr){
 	*(*sptr)++ = ts;
 }
 
-Sequence create_nfa(const char* str, RegexContext* rctx){
+Sequence create_nfa(const char* str, RegexVar* rctx){
 	printf("%s\n", str);
 	char* copy = malloc((strlen(str) + 1) * sizeof(*copy));
 	strcpy(copy, str);
@@ -71,12 +71,12 @@ Sequence create_nfa(const char* str, RegexContext* rctx){
 			inquote = !inquote;
 			break;
 		case '{':
-			ti = (strchr(c, '}') - c);
+			ti = (strchr(c, '}') - c) - 1;
+			memcpy(tstr, c + 1, ti);
 			tstr[ti] = '\0';
-			memcpy(tstr, c + 1, ti - 1);
-			for(i = 0; rctx->ids[i]; i++)
-				if(strcmp(tstr, rctx->ids[i]) == 0){
-					s = create_nfa(rctx->patterns[i], rctx);
+			for(i = 0; rctx[i].id; i++)
+				if(strcmp(tstr, rctx[i].id) == 0){
+					s = create_nfa(rctx[i].pattern, rctx);
 					break;
 				}
 			c += (ti + 1);
@@ -211,19 +211,7 @@ int** create_dfa(Sequence nfa){
 	return nmachine ? nmachine : machine;
 }
 
-void regex_define(RegexContext* rctx, const char* id, const char* pattern){
-	size_t i;
-	for(i = 0; rctx->ids[i]; i++);
-	rctx->ids[i] = id;
-	rctx->patterns[i] = pattern;
-}
-
-RegexContext regex_ctx(size_t size){
-	return (RegexContext){ calloc(size, sizeof(char*)),
-							calloc(size, sizeof(char*)) };
-}
-
-int** regex(char* str, RegexContext* rctx){
+int** regex(char* str, RegexVar* rctx){
 	Sequence nfa = create_nfa(str, rctx);
 	int** machine = create_dfa(nfa);
 	return machine;

@@ -7,22 +7,25 @@
 
 void tokenizer_init()
 {
-	RegexContext rctx = regex_ctx(16);
-	char *lex = read_file("spec/isoC2011_lex.txt");
-	char *id, *pattern;
-
-	for(char* ptr = lex; *ptr != '\r'; ptr++){
-		id = ptr;
-		ptr = strchr(ptr, ':');
-		*ptr = '\0';
-
-		pattern = ptr + 1;
-		ptr = strchr(pattern, '\n');
-		*ptr = '\0';
-
-		regex_define(&rctx, id, pattern);
-		printf("%s ==> %s\n", id, pattern);
-	}
+	RegexVar rctx[] = {
+		{"O", "[0-7]"},
+		{"D", "[0-9]"},
+		{"NZ", "[1-9]"},
+		{"L", "[a-zA-Z_]"},
+		{"A", "[a-zA-Z_0-9]"},
+		{"H", "[a-fA-F0-9]"},
+		{"HP", "0[xX]"},
+		{"E", "[Ee][+\\-]?{D}+"},
+		{"P", "[Pp][+\\-]?{D}+"},
+		{"FS", "f|F|l|L"},
+		{"IS", "(u|U)(l|L|ll|LL)?|(l|L|ll|LL)(u|U)?"},
+		{"CP", "u|U|L"},
+		{"SP", "u8|u|U|L"},
+		{"ES", "\\\\(['\"\?\\abfnrtv]|[0-7][0-7]?[0-7]?|x[a-fA-F0-9]+)"},
+		{"WS", "[ \t\v\n\f]"},
+		{NULL}
+	};
+	regex("test{O}{H}", rctx);
 }
 
 /*size_t tokenize(char* input, Token* listptr){
