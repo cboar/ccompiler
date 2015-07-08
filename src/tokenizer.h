@@ -2,79 +2,7 @@
 #define TOKENIZER_H
 
 typedef enum TokenType {
-	ADD_ASSIGN,
-	ALIGNAS,
-	ALIGNOF,
-	AND_ASSIGN,
-	AND_OP,
-	ATOMIC,
-	AUTO,
-	BOOL,
-	BREAK,
-	CASE,
-	CHAR,
-	COMPLEX,
-	CONST,
-	CONTINUE,
-	DEC_OP,
-	DEFAULT,
-	DIV_ASSIGN,
-	DO,
-	DOUBLE,
-	ELLIPSIS,
-	ELSE,
-	ENUM,
-	ENUMERATION_CONSTANT,
-	EQ_OP,
-	EXTERN,
-	FLOAT,
-	FOR,
-	FUNC_NAME,
-	F_CONSTANT,
-	GENERIC,
-	GE_OP,
-	GOTO,
-	IDENTIFIER,
-	IF,
-	IMAGINARY,
-	INC_OP,
-	INLINE,
-	INT,
-	I_CONSTANT,
-	LEFT_ASSIGN,
-	LEFT_OP,
-	LE_OP,
-	LONG,
-	MOD_ASSIGN,
-	MUL_ASSIGN,
-	NE_OP,
-	NORETURN,
-	OR_ASSIGN,
-	OR_OP,
-	PTR_OP,
-	REGISTER,
-	RESTRICT,
-	RETURN,
-	RIGHT_ASSIGN,
-	RIGHT_OP,
-	SHORT,
-	SIGNED,
-	SIZEOF,
-	STATIC,
-	STATIC_ASSERT,
-	STRING_LITERAL,
-	STRUCT,
-	SUB_ASSIGN,
-	SWITCH,
-	THREAD_LOCAL,
-	TYPEDEF,
-	TYPEDEF_NAME,
-	UNION,
-	UNSIGNED,
-	VOID,
-	VOLATILE,
-	WHILE,
-	XOR_ASSIGN
+	#include "spec/tokentypes.txt"
 } TokenType;
 
 typedef struct TokenDef {
@@ -86,6 +14,13 @@ typedef struct Token {
 	char* lexeme;
 	int type;
 } Token;
+
+typedef struct Machine {
+	int** machine;
+	TokenType type;
+	int state, length;
+	int ostate, olength;
+} Machine;
 
 size_t tokenize(char*, Token*);
 void tokenizer_init();

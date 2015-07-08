@@ -1,19 +1,32 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "util.h"
 #include "regex.h"
 #include "tokenizer.h"
 
 void tokenizer_init()
 {
+}
+
+size_t tokenize(char* input, Token* listptr){
 	RegexVar rctx[] = {
 		#include "spec/regexdefs.txt"
 	};
 	TokenDef tokens[] = {
 		#include "spec/tokendefs.txt"
 	};
-
+	size_t amt = (sizeof(tokens) / sizeof(*tokens));
+	Machine* machines = malloc(amt * sizeof(*machines));
+	for(int i = 0; i < amt; i++){
+		int** machine = regex(tokens[i].pattern, rctx);
+		TokenType type = tokens[i].type;
+		machines[i] = (Machine){ machine, type, 0, 0, 0, 0 };
+	}
+	for(char c; (c = *input); input++){
+		for(int m = 0; m < amt; m++){
+		}
+	}
+	return 0;
 }
 
 /*size_t tokenize(char* input, Token* listptr){
