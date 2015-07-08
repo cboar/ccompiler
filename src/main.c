@@ -1,7 +1,7 @@
 #include <stdio.h>
-#include "util.h"
+#include "tokenizer.h"
 #include "regex.h"
 
 int main(void){
-
+	tokenizer_init();
 }

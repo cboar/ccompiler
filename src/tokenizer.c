@@ -1,8 +1,29 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "util.h"
 #include "regex.h"
 #include "tokenizer.h"
+
+void tokenizer_init()
+{
+	RegexContext rctx = regex_ctx(16);
+	char *lex = read_file("spec/isoC2011_lex.txt");
+	char *id, *pattern;
+
+	for(char* ptr = lex; *ptr != '\r'; ptr++){
+		id = ptr;
+		ptr = strchr(ptr, ':');
+		*ptr = '\0';
+
+		pattern = ptr + 1;
+		ptr = strchr(pattern, '\n');
+		*ptr = '\0';
+
+		regex_define(&rctx, id, pattern);
+		printf("%s ==> %s\n", id, pattern);
+	}
+}
 
 /*size_t tokenize(char* input, Token* listptr){
 	int state[AMT] = {0}, nstate[AMT] = {0};
