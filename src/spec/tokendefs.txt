@@ -55,7 +55,7 @@
 {"{HP}{H}*\\.{H}+{P}{FS}?", F_CONSTANT},
 {"{HP}{H}+\\.{P}{FS}?", F_CONSTANT},
 {"({SP}?\\\"([^\"\\\\\n]|{ES})*\\\"{WS}*)+", STRING_LITERAL},
-{"...", ELLIPSIS},
+{"\\.\\.\\.", ELLIPSIS},
 {">>=", RIGHT_ASSIGN},
 {"<<=", LEFT_ASSIGN},
 {"\\+=", ADD_ASSIGN},

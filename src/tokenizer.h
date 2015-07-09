@@ -12,14 +12,14 @@ typedef struct TokenDef {
 
 typedef struct Token {
 	char* lexeme;
-	int type;
+	TokenType type;
 } Token;
 
 typedef struct Machine {
 	int** machine;
 	TokenType type;
-	int state, length;
-	int ostate, olength;
+	int state, ostate;
+	size_t length, olength;
 } Machine;
 
 size_t tokenize(char*, Token*);

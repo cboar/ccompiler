@@ -2,6 +2,25 @@
 #include <stdio.h>
 #include "util.h"
 
+static char* token_names[] = {
+	#include "spec/tokentypes_debug.txt"
+};
+
+void print_tokenlist(Token* list, size_t count)
+{
+	for(size_t i = 0; i < count; i++){
+		switch(list[i].type){
+		case WHITESPACE: break;
+		case LITERAL:
+			printf("'%s' ", list[i].lexeme);
+			break;
+		default:
+			printf("%s ", token_names[list[i].type]);
+		}
+	}
+	printf("\n");
+}
+
 char get_escaped(char c)
 {
 	switch(c){
