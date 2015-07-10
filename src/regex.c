@@ -14,15 +14,16 @@ static char SINGLE_EPSILON[1];
 #define CONNECT_WITH(a,b,c) (*a)=(State){c,b,0}
 #define CONNECT(a,b) (*a)=(State){SINGLE_EPSILON,b,0}
 
-void concat_all(Sequence* stack, Sequence** sptr){
+void concat_all(Sequence* stack, Sequence** sptr)
+{
 	Sequence ts = {stack->start, ((*sptr)-1)->end};
 	while(--(*sptr) != stack)
 		CONNECT(((*sptr)-1)->end, (*sptr)->start);
 	*(*sptr)++ = ts;
 }
 
-Sequence create_nfa(const char* str, RegexVar* rctx){
-	printf("%s\n", str);
+Sequence create_nfa(const char* str, RegexVar* rctx)
+{
 	char* copy = malloc((strlen(str) + 1) * sizeof(*copy));
 	strcpy(copy, str);
 
@@ -151,7 +152,8 @@ Sequence create_nfa(const char* str, RegexVar* rctx){
 #undef CONNECT_WITH
 #undef CONNECT
 
-size_t get_eclosure_sub(State* s, State*** listptr){
+size_t get_eclosure_sub(State* s, State*** listptr)
+{
 	if(!s)
 		return 0;
 	*(*listptr)++ = s;
@@ -165,29 +167,28 @@ size_t get_eclosure_sub(State* s, State*** listptr){
 	return count;
 }
 
-size_t get_eclosure(State* s, State** cache, State*** cacheptrs){
+size_t get_eclosure(State* s, State** cache, State*** cacheptrs)
+{
 	size_t i;
 	for(i = 0; cache[i]; i++)
 		if(cache[i] == s)
 			return i;
-	State** list = malloc(512 * sizeof(State*));
+	State** list = malloc(32 * sizeof(State*));
 	size_t count = get_eclosure_sub(s, &list);
 	*list = NULL;
-
-	State** listn = malloc((count+1) * sizeof(State*));
-	memcpy(listn, list-count, (count+1) * sizeof(State*));
-	free(list-count);
+	State** listn = realloc(list - count, (count + 1) * sizeof(State*));
 
 	cache[i] = s;
-	cacheptrs[i] = listn;
+	cacheptrs[i] = listn ? listn : list;
 	return i;
 }
 
-int** create_dfa(Sequence nfa){
-	State *cache[512] = {0}, **cacheptrs[512] = {0};
-	int i, relinks[512] = {0};
+int** create_dfa(Sequence nfa)
+{
+	State *cache[64] = {0}, **cacheptrs[64] = {0};
+	int i, relinks[64] = {0};
 
-	int** machine = calloc(512, sizeof(int*));
+	int** machine = calloc(64, sizeof(int*));
 	get_eclosure(nfa.start, cache, cacheptrs);
 
 	for(i = 0; cache[i]; i++){
@@ -208,11 +209,33 @@ int** create_dfa(Sequence nfa){
 		}
 	}
 	int** nmachine = realloc(machine, i * sizeof(int*));
+	void* freed[64] = {0};
+	while(i--){
+		if(!safe_to_free(cacheptrs[i], freed))
+			continue;
+		free(cacheptrs[i]);
+	}
 	return nmachine ? nmachine : machine;
 }
 
-int** regex(char* str, RegexVar* rctx){
+void free_state(State* s, void** freed)
+{
+	if(!safe_to_free(s, freed))
+		return;
+	free_state(s->out0, freed);
+	if(s->charlist == SPLIT_EPSILON)
+		free_state(s->out1, freed);
+	else if(s->charlist != SINGLE_EPSILON)
+		free(s->charlist);
+	free(s);
+}
+
+int** regex(char* str, RegexVar* rctx)
+{
 	Sequence nfa = create_nfa(str, rctx);
-	int** machine = create_dfa(nfa);
-	return machine;
+	int** dfa = create_dfa(nfa);
+
+	void* freed[128] = {0};
+	free_state(nfa.start, freed);
+	return dfa;
 }

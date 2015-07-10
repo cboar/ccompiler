@@ -2,12 +2,24 @@
 #include <stdio.h>
 #include "util.h"
 
-static char* token_names[] = {
-	#include "spec/tokentypes_debug.txt"
-};
+
+int safe_to_free(void* ptr, void** freed)
+{
+	if(ptr == NULL)
+		return 0;
+	size_t i;
+	for(i = 0; freed[i]; i++)
+		if(freed[i] == ptr)
+			return 0;
+	freed[i] = ptr;
+	return 1;
+}
 
 void print_tokenlist(Token* list, size_t count)
 {
+	static const char* token_names[] = {
+		#include "spec/tokentypes_debug.txt"
+	};
 	for(size_t i = 0; i < count; i++){
 		switch(list[i].type){
 		case WHITESPACE: break;
