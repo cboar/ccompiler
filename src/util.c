@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include "util.h"
 
-
 int safe_to_free(void* ptr, void** freed)
 {
 	if(ptr == NULL)
@@ -13,24 +12,6 @@ int safe_to_free(void* ptr, void** freed)
 			return 0;
 	freed[i] = ptr;
 	return 1;
-}
-
-void print_tokenlist(Token* list, size_t count)
-{
-	static const char* token_names[] = {
-		#include "spec/tokentypes_debug.txt"
-	};
-	for(size_t i = 0; i < count; i++){
-		switch(list[i].type){
-		case WHITESPACE: break;
-		case LITERAL:
-			printf("'%s' ", list[i].lexeme);
-			break;
-		default:
-			printf("%s ", token_names[list[i].type]);
-		}
-	}
-	printf("\n");
 }
 
 char get_escaped(char c)

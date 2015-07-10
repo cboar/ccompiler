@@ -1,14 +1,9 @@
-#ifndef TOKENIZER_H
-#define TOKENIZER_H
+#ifndef LEXER_H
+#define LEXER_H
 
 typedef enum TokenType {
 	#include "spec/tokentypes.txt"
 } TokenType;
-
-typedef struct TokenDef {
-	char* pattern;
-	TokenType type;
-} TokenDef;
 
 typedef struct Token {
 	char* lexeme;
@@ -22,7 +17,10 @@ typedef struct Machine {
 	size_t length, olength;
 } Machine;
 
-size_t tokenize(char*, Token*);
 void tokenizer_init();
+size_t tokenize(char*, Token*);
+void print_tokenlist(Token*, size_t);
 
-#endif
+#endif /* LEXER_H */
+
+

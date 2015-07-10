@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "regex.h"
-#include "tokenizer.h"
+#include "lexer.h"
 
 static Machine* machines;
 static size_t amt;
@@ -12,14 +12,14 @@ void tokenizer_init()
 	RegexVar rctx[] = {
 		#include "spec/regexdefs.txt"
 	};
-	TokenDef tokens[] = {
+	Token defs[] = {
 		#include "spec/tokendefs.txt"
 	};
-	amt = (sizeof(tokens) / sizeof(*tokens));
+	amt = (sizeof(defs) / sizeof(*defs));
 	machines = malloc(amt * sizeof(*machines));
 	for(size_t i = 0; i < amt; i++){
-		int** machine = regex(tokens[i].pattern, rctx);
-		TokenType type = tokens[i].type;
+		int** machine = regex(defs[i].lexeme, rctx);
+		TokenType type = defs[i].type;
 		machines[i] = (Machine){ machine, type, 0, 0, 0, 0 };
 	}
 }
@@ -66,4 +66,22 @@ size_t tokenize(char* input, Token* list)
 		}
 	}
 	return count;
+}
+
+void print_tokenlist(Token* list, size_t count)
+{
+	static const char* token_names[] = {
+		#include "spec/tokentypes_debug.txt"
+	};
+	for(size_t i = 0; i < count; i++){
+		switch(list[i].type){
+		case WHITESPACE: break;
+		case LITERAL:
+			printf("'%s' ", list[i].lexeme);
+			break;
+		default:
+			printf("%s ", token_names[list[i].type]);
+		}
+	}
+	printf("\n");
 }
