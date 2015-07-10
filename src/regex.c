@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <stdint.h>
 #include "util.h"
 #include "regex.h"
 
@@ -30,12 +29,9 @@ Sequence create_nfa(const char* str, RegexVar* rctx)
 	Sequence stack[32] = {{0}}, *sptr = stack;
 	Sequence s, one, two;
 	char *charlist, *tcharlist, tstr[256];
-	int i, ti, inquote = 0;
+	int i, ti;
 
 	for(char* c = copy; *c; c++){
-		if(inquote && *c != '\"')
-			goto literal;
-
 		switch(*c){
 		case '|':
 			concat_all(stack, &sptr);
@@ -65,11 +61,6 @@ Sequence create_nfa(const char* str, RegexVar* rctx)
 			break;
 		case '.':
 			s = create_nfa("[^]", NULL);
-			break;
-		case '\"':
-			s = SEQUENCE();
-			CONNECT(s.start, s.end);
-			inquote = !inquote;
 			break;
 		case '{':
 			ti = (strchr(c, '}') - c) - 1;
@@ -133,7 +124,7 @@ Sequence create_nfa(const char* str, RegexVar* rctx)
 			c++;
 			*c = get_escaped(*c);
 			/* fall through */
-		literal: default:
+		default:
 			s = SEQUENCE();
 			charlist = malloc(2 * sizeof(*charlist));
 			charlist[0] = *c;

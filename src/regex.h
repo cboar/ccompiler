@@ -1,23 +1,22 @@
 #ifndef REGEX_H
 #define REGEX_H
 
-typedef struct RegexVar RegexVar;
 typedef struct State State;
 typedef struct Sequence Sequence;
 
-struct RegexVar {
+typedef struct RegexVar {
 	char *id, *pattern;
-};
+} RegexVar;
+
 struct State {
-	char* charlist;
-	State* out0;
-	State* out1;
+	char *charlist;
+	State *out0, *out1;
 };
+
 struct Sequence {
-	State* start;
-	State* end;
+	State *start, *end;
 };
 
 int** regex(char*, RegexVar*);
 
-#endif
+#endif /* REGEX_H */
