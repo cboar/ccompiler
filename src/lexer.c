@@ -4,10 +4,7 @@
 #include "regex.h"
 #include "lexer.h"
 
-static Machine* machines;
-static size_t amt;
-
-void tokenizer_init()
+MachineList build_machines()
 {
 	RegexVar rctx[] = {
 		#include "spec/regexdefs.txt"
@@ -15,19 +12,32 @@ void tokenizer_init()
 	Token defs[] = {
 		#include "spec/tokendefs.txt"
 	};
-	amt = (sizeof(defs) / sizeof(*defs));
-	machines = malloc(amt * sizeof(*machines));
+	size_t amt = (sizeof(defs) / sizeof(*defs));
+	Machine* machines = malloc(amt * sizeof(*machines));
 	for(size_t i = 0; i < amt; i++){
 		int** machine = regex(defs[i].lexeme, rctx);
 		TokenType type = defs[i].type;
 		machines[i] = (Machine){ machine, type, 0, 0, 0, 0 };
 	}
+	return (MachineList){machines, amt};
 }
 
-size_t update_machines(char c)
+void free_machines(MachineList ml)
 {
+	for(size_t i = 0; i < ml.amt; i++){
+		int** m = ml.machines[i].machine;
+		for(size_t k = 0; m[k]; k++)
+			free(m[k]);
+		free(m);
+	}
+	free(ml.machines);
+}
+
+size_t update_machines(char c, MachineList ml)
+{
+	Machine* machines = ml.machines;
 	size_t highest = 0;
-	for(size_t i = 0; i < amt; i++){
+	for(size_t i = 0; i < ml.amt; i++){
 		Machine* m = (machines + i);
 		m->state = m->machine[m->state][c];
 		if(m->state == 0){
@@ -41,11 +51,16 @@ size_t update_machines(char c)
 	return highest;
 }
 
-size_t tokenize(char* input, Token* list)
+Token* tokenize(char* input)
 {
+	Token* list = malloc(2048 * sizeof(*list));
+	MachineList ml = build_machines();
+	Machine* machines = ml.machines;
+	size_t amt = ml.amt;
+
 	size_t count = 0, ohigh = 0;
 	for(char c; (c = *input); input++){
-		size_t high = update_machines(c);
+		size_t high = update_machines(c, ml);
 		if(ohigh >= high){
 			for(size_t i = 0; i < amt; i++){
 				Machine* m = (machines + i);
@@ -65,19 +80,21 @@ size_t tokenize(char* input, Token* list)
 			m->ostate = m->state;
 		}
 	}
-	return count;
+	list[count] = (Token){ NULL };
+	free_machines(ml);
+	return list;
 }
 
-void print_tokenlist(Token* list, size_t count)
+void print_tokenlist(Token* list)
 {
 	static const char* token_names[] = {
 		#include "spec/tokentypes_debug.txt"
 	};
-	for(size_t i = 0; i < count; i++){
+	for(size_t i = 0; list[i].lexeme; i++){
 		switch(list[i].type){
 		case WHITESPACE: break;
 		case LITERAL:
-			printf("'%s' ", list[i].lexeme);
+			printf("%s ", list[i].lexeme);
 			break;
 		default:
 			printf("%s ", token_names[list[i].type]);

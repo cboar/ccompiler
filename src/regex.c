@@ -167,7 +167,8 @@ size_t get_eclosure(State* s, State** cache, State*** cacheptrs)
 	State** list = malloc(32 * sizeof(State*));
 	size_t count = get_eclosure_sub(s, &list);
 	*list = NULL;
-	State** listn = realloc(list - count, (count + 1) * sizeof(State*));
+	list -= count;
+	State** listn = realloc(list, (count + 1) * sizeof(State*));
 
 	cache[i] = s;
 	cacheptrs[i] = listn ? listn : list;
@@ -199,6 +200,7 @@ int** create_dfa(Sequence nfa)
 			}
 		}
 	}
+	machine[i++] = NULL;
 	int** nmachine = realloc(machine, i * sizeof(int*));
 	void* freed[64] = {0};
 	while(i--){

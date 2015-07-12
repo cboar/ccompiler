@@ -17,10 +17,12 @@ typedef struct Machine {
 	size_t length, olength;
 } Machine;
 
-void tokenizer_init();
-size_t tokenize(char*, Token*);
-void print_tokenlist(Token*, size_t);
+typedef struct MachineList {
+	Machine* machines;
+	size_t amt;
+} MachineList;
+
+Token* tokenize(char*);
+void print_tokenlist(Token*);
 
 #endif /* LEXER_H */
-
-

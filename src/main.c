@@ -7,9 +7,7 @@
 int main(void)
 {
 	char* src = read_file("testcode");
-	Token* list = malloc(256 * sizeof(*list));
-	tokenizer_init();
-	size_t count = tokenize(src, list);
+	Token* list = tokenize(src);
 
-	print_tokenlist(list, count);
+	print_tokenlist(list);
 }
