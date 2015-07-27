@@ -60,7 +60,7 @@ Sequence create_nfa(const char* str, RegexVar* rctx)
 			CONNECT_SPLIT(one.end, one.start, s.end);
 			break;
 		case '.':
-			s = create_nfa("[^]", NULL);
+			s = create_nfa("[^\r\n]", NULL);
 			break;
 		case '{':
 			ti = (strchr(c, '}') - c) - 1;
