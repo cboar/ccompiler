@@ -1,3 +1,5 @@
+{"//.*", COMMENT},
+{"/\\*([^*]|(\\*[^*/]))*\\*+/", COMMENT},
 {"auto", AUTO},
 {"break", BREAK},
 {"case", CASE},

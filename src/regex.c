@@ -191,7 +191,8 @@ int** create_dfa(Sequence nfa)
 				machine[ri][0] = 1;
 			if(!s->charlist || s->charlist == SINGLE_EPSILON || s->charlist == SPLIT_EPSILON)
 				continue;
-			size_t eclosi = get_eclosure(s->out0, cache, cacheptrs);
+			int eclosi = get_eclosure(s->out0, cache, cacheptrs);
+			eclosi = relinks[eclosi] ? relinks[eclosi] : eclosi;
 			for(char* c = s->charlist; *c; c++){
 				if(machine[ri][*c] != 0)
 					relinks[eclosi] = machine[ri][*c];

@@ -9,6 +9,7 @@
 "BREAK",
 "CASE",
 "CHAR",
+"COMMENT",
 "COMPLEX",
 "CONST",
 "CONTINUE",
