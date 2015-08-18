@@ -4,7 +4,7 @@
 #include "regex.h"
 #include "lexer.h"
 
-MachineList build_machines()
+size_t build_machines(Machine* out, size_t max)
 {
 	RegexVar rctx[] = {
 		#include "spec/regexdefs.txt"
@@ -13,32 +13,35 @@ MachineList build_machines()
 		#include "spec/tokendefs.txt"
 	};
 	size_t amt = (sizeof(defs) / sizeof(*defs));
-	Machine* machines = malloc(amt * sizeof(*machines));
+	if(amt > max){
+		fprintf(stderr, "NOT ENOUGH SPACE FOR LEXER MACHINES, EXITING...\n");
+		exit(1);
+	}
+
 	for(size_t i = 0; i < amt; i++){
 		int** machine = regex(defs[i].lexeme, rctx);
 		TokenType type = defs[i].type;
-		machines[i] = (Machine){ machine, type, 0, 0, 0, 0 };
+		out[i] = (Machine){ machine, type, 0, 0, 0, 0 };
 	}
-	return (MachineList){machines, amt};
+	return amt;
 }
 
-void free_machines(MachineList ml)
+void free_machines(Machine* ms, size_t amt)
 {
-	for(size_t i = 0; i < ml.amt; i++){
-		int** m = ml.machines[i].machine;
+	for(size_t i = 0; i < amt; i++){
+		int** m = ms[i].machine;
 		for(size_t k = 0; m[k]; k++)
 			free(m[k]);
 		free(m);
 	}
-	free(ml.machines);
 }
 
-size_t update_machines(char c, MachineList ml)
+size_t update_machines(char c, Machine* ms, size_t amt)
 {
-	Machine* machines = ml.machines;
 	size_t highest = 0;
-	for(size_t i = 0; i < ml.amt; i++){
-		Machine* m = (machines + i);
+	for(size_t i = 0; i < amt; i++){
+		Machine* m = (ms + i);
+
 		m->state = m->machine[m->state][c];
 		if(m->state == 0){
 			m->state = m->machine[0][c];
@@ -51,37 +54,42 @@ size_t update_machines(char c, MachineList ml)
 	return highest;
 }
 
+void reset_machines(Machine* ms, size_t amt)
+{
+	for(size_t i = 0; i < amt; i++){
+		Machine* m = (ms + i);
+		m->last_length = m->length;
+		m->last_state = m->state;
+	}
+}
+
 Token* tokenize(char* input)
 {
-	Token* list = malloc(2048 * sizeof(*list));
-	MachineList ml = build_machines();
-	Machine* machines = ml.machines;
-	size_t amt = ml.amt;
+	Token* list = malloc(1024 * sizeof(*list));
+	Machine ms[128];
+	size_t amt = build_machines(ms, sizeof(ms) / sizeof(*ms));
 
-	size_t count = 0, ohigh = 0;
+	size_t count = 0, last_highest = 0;
 	for(char c; (c = *input); input++){
-		size_t high = update_machines(c, ml);
-		if(ohigh >= high){
+		size_t highest = update_machines(c, ms, amt);
+
+		if(last_highest >= highest){
 			for(size_t i = 0; i < amt; i++){
-				Machine* m = (machines + i);
-				if(m->olength != ohigh || m->machine[m->ostate][0] != 1)
+				Machine* m = (ms + i);
+				if(m->last_length != last_highest || m->machine[m->last_state][0] != 1)
 					continue;
-				char* str = malloc(ohigh + 1);
-				memcpy(str, input - ohigh, ohigh);
-				str[ohigh] = 0;
+				char* str = malloc(last_highest + 1);
+				memcpy(str, input - last_highest, last_highest);
+				str[last_highest] = 0;
 				list[count++] = (Token){ str, m->type };
 				break;
 			}
 		}
-		ohigh = high;
-		for(size_t i = 0; i < amt; i++){
-			Machine* m = (machines + i);
-			m->olength = m->length;
-			m->ostate = m->state;
-		}
+		last_highest = highest;
+		reset_machines(ms, amt);
 	}
 	list[count] = (Token){ NULL };
-	free_machines(ml);
+
 	return list;
 }
 

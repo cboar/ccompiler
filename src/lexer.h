@@ -13,14 +13,9 @@ typedef struct Token {
 typedef struct Machine {
 	int** machine;
 	TokenType type;
-	int state, ostate;
-	size_t length, olength;
+	int state, last_state;
+	size_t length, last_length;
 } Machine;
-
-typedef struct MachineList {
-	Machine* machines;
-	size_t amt;
-} MachineList;
 
 Token* tokenize(char*);
 void print_tokenlist(Token*);
