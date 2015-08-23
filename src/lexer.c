@@ -3,6 +3,7 @@
 #include <string.h>
 #include "regex.h"
 #include "lexer.h"
+#include "util.h"
 
 Machine* build_machines(size_t* amt_out)
 {
@@ -32,9 +33,10 @@ void free_machines(Machine* ms, size_t amt)
 			free(m[k]);
 		free(m);
 	}
+	free(ms);
 }
 
-size_t update_machines(char c, Machine* ms, size_t amt)
+size_t update_machines(char c, Machine* ms, size_t amt, int* out_index)
 {
 	size_t highest = 0;
 	for(size_t i = 0; i < amt; i++){
@@ -47,63 +49,69 @@ size_t update_machines(char c, Machine* ms, size_t amt)
 		} else {
 			m->length++;
 		}
-		highest = (m->length > highest) ? m->length : highest;
+								  /* state is accepting */
+		if(m->length > highest && m->machine[m->state][0]){
+			highest = m->length;
+			*out_index = i;
+		}
 	}
 	return highest;
 }
 
-void reset_machines(Machine* ms, size_t amt)
+void push_list(char* lex, size_t len, TokenType type, TokenList* list)
 {
-	for(size_t i = 0; i < amt; i++){
-		Machine* m = (ms + i);
-		m->last_length = m->length;
-		m->last_state = m->state;
+	if((list->count + 1) == list->max){
+		list->max += 256;
+		Token* new = realloc(list->data, list->max * sizeof(Token));
+		if(new == NULL)
+			EXIT_ERR("CANNOT REALLOC MEMORY FOR TOKENLIST");
+		list->data = new;
 	}
+	char* str = malloc(len + 1);
+	memcpy(str, lex - len, len);
+	str[len] = '\0';
+	list->data[list->count++] = (Token){ str, type };
 }
 
-Token* tokenize(char* input)
+TokenList tokenize(char* input)
 {
-	Token* list = malloc(1024 * sizeof(*list));
-	size_t amt;
-	Machine* ms = build_machines(&amt);
+	TokenList list = { malloc(256 * sizeof(Token)), 256, 0 };
 
-	size_t count = 0, last_highest = 0;
+	int last_best = -1;
+	size_t ms_amt, last_len = 0;
+	Machine* ms = build_machines(&ms_amt);
+
 	for(char c; (c = *input); input++){
-		size_t highest = update_machines(c, ms, amt);
+		int best = -1;
+		size_t len = update_machines(c, ms, ms_amt, &best);
 
-		if(last_highest >= highest){
-			for(size_t i = 0; i < amt; i++){
-				Machine* m = (ms + i);
-				if(m->last_length != last_highest || m->machine[m->last_state][0] != 1)
-					continue;
-				char* str = malloc(last_highest + 1);
-				memcpy(str, input - last_highest, last_highest);
-				str[last_highest] = 0;
-				list[count++] = (Token){ str, m->type };
-				break;
-			}
+		if(last_len >= len && last_best != -1)
+			push_list(input, last_len, (ms + last_best)->type, &list);
+
+		last_len = len, last_best = best;
+		for(size_t i = 0; i < ms_amt; i++){
+			Machine* m = (ms + i);
+			m->last_length = m->length;
+			m->last_state = m->state;
 		}
-		last_highest = highest;
-		reset_machines(ms, amt);
 	}
-	list[count] = (Token){ NULL };
-
+	free_machines(ms, ms_amt);
 	return list;
 }
 
-void print_tokenlist(Token* list)
+void print_tokenlist(TokenList list)
 {
 	static const char* token_names[] = {
 		#include "spec/tokentypes_debug.txt"
 	};
-	for(size_t i = 0; list[i].lexeme; i++){
-		switch(list[i].type){
+	for(size_t i = 0; i < list.count; i++){
+		switch(list.data[i].type){
 		case WHITESPACE: break;
 		case LITERAL:
-			printf("%s ", list[i].lexeme);
+			printf("%s ", list.data[i].lexeme);
 			break;
 		default:
-			printf("%s ", token_names[list[i].type]);
+			printf("%s ", token_names[list.data[i].type]);
 		}
 	}
 	printf("\n");

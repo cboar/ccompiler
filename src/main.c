@@ -7,7 +7,7 @@
 int main(void)
 {
 	char* src = read_file("testcode");
-	Token* list = tokenize(src);
+	TokenList list = tokenize(src);
 
 	print_tokenlist(list);
 }

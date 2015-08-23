@@ -10,6 +10,11 @@ typedef struct Token {
 	TokenType type;
 } Token;
 
+typedef struct TokenList {
+	Token* data;
+	size_t max, count;
+} TokenList;
+
 typedef struct Machine {
 	int** machine;
 	TokenType type;
@@ -17,7 +22,7 @@ typedef struct Machine {
 	size_t length, last_length;
 } Machine;
 
-Token* tokenize(char*);
-void print_tokenlist(Token*);
+TokenList tokenize(char*);
+void print_tokenlist(TokenList);
 
 #endif /* LEXER_H */
