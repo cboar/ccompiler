@@ -4,7 +4,7 @@
 #include "regex.h"
 #include "lexer.h"
 
-size_t build_machines(Machine* out, size_t max)
+Machine* build_machines(size_t* amt_out)
 {
 	RegexVar rctx[] = {
 		#include "spec/regexdefs.txt"
@@ -13,17 +13,15 @@ size_t build_machines(Machine* out, size_t max)
 		#include "spec/tokendefs.txt"
 	};
 	size_t amt = (sizeof(defs) / sizeof(*defs));
-	if(amt > max){
-		fprintf(stderr, "NOT ENOUGH SPACE FOR LEXER MACHINES, EXITING...\n");
-		exit(1);
-	}
+	*amt_out = amt;
 
+	Machine* ms = malloc(sizeof(Machine) * amt);
 	for(size_t i = 0; i < amt; i++){
 		int** machine = regex(defs[i].lexeme, rctx);
 		TokenType type = defs[i].type;
-		out[i] = (Machine){ machine, type, 0, 0, 0, 0 };
+		ms[i] = (Machine){ machine, type, 0, 0, 0, 0 };
 	}
-	return amt;
+	return ms;
 }
 
 void free_machines(Machine* ms, size_t amt)
@@ -66,8 +64,8 @@ void reset_machines(Machine* ms, size_t amt)
 Token* tokenize(char* input)
 {
 	Token* list = malloc(1024 * sizeof(*list));
-	Machine ms[128];
-	size_t amt = build_machines(ms, sizeof(ms) / sizeof(*ms));
+	size_t amt;
+	Machine* ms = build_machines(&amt);
 
 	size_t count = 0, last_highest = 0;
 	for(char c; (c = *input); input++){
