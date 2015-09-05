@@ -36,7 +36,7 @@ void free_machines(Machine* ms, size_t amt)
 	free(ms);
 }
 
-size_t update_machines(char c, Machine* ms, size_t amt, int* out_index)
+size_t update_machines(char c, Machine* ms, size_t amt)
 {
 	size_t highest = 0;
 	for(size_t i = 0; i < amt; i++){
@@ -50,10 +50,8 @@ size_t update_machines(char c, Machine* ms, size_t amt, int* out_index)
 			m->length++;
 		}
 								  /* state is accepting */
-		if(m->length > highest && m->machine[m->state][0]){
+		if(m->length > highest)
 			highest = m->length;
-			*out_index = i;
-		}
 	}
 	return highest;
 }
@@ -77,18 +75,22 @@ TokenList tokenize(char* input)
 {
 	TokenList list = { malloc(256 * sizeof(Token)), 256, 0 };
 
-	int last_best = -1;
 	size_t ms_amt, last_len = 0;
 	Machine* ms = build_machines(&ms_amt);
 
 	for(char c; (c = *input); input++){
-		int best = -1;
-		size_t len = update_machines(c, ms, ms_amt, &best);
+		size_t len = update_machines(c, ms, ms_amt);
 
-		if(last_len >= len && last_best != -1)
-			push_list(input, last_len, (ms + last_best)->type, &list);
-
-		last_len = len, last_best = best;
+		if(last_len >= len){
+			for(size_t i = 0; i < ms_amt; i++){
+				Machine* m = (ms + i);
+				if(m->last_length == last_len && m->machine[m->last_state][0]){
+					push_list(input, last_len, m->type, &list);
+					break;
+				}
+			}
+		}
+		last_len = len;
 		for(size_t i = 0; i < ms_amt; i++){
 			Machine* m = (ms + i);
 			m->last_length = m->length;
@@ -107,11 +109,13 @@ void print_tokenlist(TokenList list)
 	for(size_t i = 0; i < list.count; i++){
 		switch(list.data[i].type){
 		case WHITESPACE: break;
-		case LITERAL:
+		/*case LITERAL:
 			printf("%s ", list.data[i].lexeme);
-			break;
+			break;*/
 		default:
-			printf("%s ", token_names[list.data[i].type]);
+			printf("%s: %s\n",
+					token_names[list.data[i].type],
+					list.data[i].lexeme);
 		}
 	}
 	printf("\n");
