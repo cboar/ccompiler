@@ -58,6 +58,9 @@ size_t update_machines(char c, Machine* ms, size_t amt)
 
 void push_list(char* lex, size_t len, TokenType type, TokenList* list)
 {
+	if(type == COMMENT || type == WHITESPACE)
+		return;
+
 	if((list->count + 1) == list->max){
 		list->max += 256;
 		Token* new = realloc(list->data, list->max * sizeof(Token));
