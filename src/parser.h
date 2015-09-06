@@ -7,6 +7,6 @@ struct Production {
 	int data;
 };
 
-void build_productions();
+void build_productions(TokenList tl);
 
 #endif /* PARSER_H */

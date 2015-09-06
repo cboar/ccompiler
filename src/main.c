@@ -2,12 +2,11 @@
 #include <stdlib.h>
 #include "util.h"
 #include "lexer.h"
-#include "regex.h"
+#include "parser.h"
 
 int main(void)
 {
 	char* src = read_file("testcode");
 	TokenList list = tokenize(src);
-
-	print_tokenlist(list);
+	build_productions(list);
 }
