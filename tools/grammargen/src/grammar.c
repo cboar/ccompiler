@@ -52,7 +52,12 @@ void add_spec(Production* p, char* in){
 }
 
 int main(void){
-	FILE* file = fopen("grammar.txt", "rt");
+	FILE* file = fopen("grammar_in.txt", "rt");
+	FILE* write = fopen("grammar_out.txt", "w");
+	if(file == NULL || write == NULL){
+		fprintf(stderr, "Could not open files, aborting...");
+		return 1;
+	}
 	char line[256];
 
 	size_t p_count = 0;
@@ -70,7 +75,7 @@ int main(void){
 				break;
 			default:
 				fprintf(stderr, "UNKNOWN CHARACTER READ: %d\n", line[1]);
-				exit(1);
+				return 1;
 			}
 		} else {
 			Spec* specs = calloc(32, sizeof(*specs));
@@ -78,19 +83,19 @@ int main(void){
 		}
 	}
 	for(size_t i = 0; i < p_count; i++){
-		printf("Production d_%s[%d];\n", prods[i].name, prods[i].amt);
-		printf("Production %s = { d_%s, 0 };\n", prods[i].name, prods[i].name);
+		fprintf(write, "Production d_%s[%d];\n", prods[i].name, prods[i].amt);
+		fprintf(write, "Production %s = { d_%s, 0 };\n", prods[i].name, prods[i].name);
 	}
-	printf("\n");
+	fprintf(write, "\n");
 	for(size_t i = 0; i < p_count; i++){
 		char* name = prods[i].name;
 		for(size_t k = 0; k < prods[i].amt; k++){
 			Spec spec = prods[i].specs[k];
-			printf("d_%s[%d] = ", name, k);
+			fprintf(write, "d_%s[%d] = ", name, k);
 			if(spec.amt > 1)
-				printf("(Production){ (Production[]){ %s }, 0 };\n", spec.data);
+				fprintf(write, "(Production){ (Production[]){ %s }, 0 };\n", spec.data);
 			else
-				printf("%s;\n", spec.data);
+				fprintf(write, "%s;\n", spec.data);
 		}
 	}
 }
